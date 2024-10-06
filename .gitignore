@@ -1,3 +1,84 @@
-venv
-venv/
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Poetry specific files
+poetry.lock
+# If you use virtual environments created by Poetry
+# Comment out this line if you don't use Poetry's built-in virtualenv
+# venv/
+
+# FastAPI specific files
+# Exclude generated static files and others if applicable
+staticfiles/
+instance/
+*.log
+*.db
+*.sqlite3
+
+# VSCode settings (if you use Visual Studio Code)
+.vscode/
+
+# Pytest and test coverage reports
+.coverage
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Environments
+.env
+.env.*
+.venv/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# macOS files
+.DS_Store
+
+# Windows files
+Thumbs.db
+
+# System file backups
+*.bak
+
+# IDE specific (PyCharm, JetBrains)
+.idea/
+
+# Node-related (if you're using JavaScript/TypeScript alongside FastAPI)
+node_modules/
+
+# Logs and caches
+*.log
+*.out
+*.tmp
+*.cache
+
+# MyPy type checker
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pylint
+.pylint.d/
+
+# Build directories
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Coverage reports
+coverage.xml
+
+# Temporary files and backup artifacts
+*.swp
+*.swo
+*~
