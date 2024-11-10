@@ -1,6 +1,6 @@
 import os
 import PyPDF2
-from pinecone import Pinecone
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 import textwrap
 import uuid
@@ -54,7 +54,15 @@ def index_pdf(pdf_path, index_name):
     
     # Create or connect to the index
     if index_name not in pc.list_indexes():
-        pc.create_index(index_name, dimension=384)
+        pc.create_index(
+            name=index_name,
+            dimension=384, # Replace with your model dimensions
+            metric="cosine", # Replace with your model metric
+            spec=ServerlessSpec(
+                cloud="aws",
+                region="us-east-1"
+    ) 
+)
     index = pc.Index(index_name)
     
     # Embed and index each chunk
@@ -72,3 +80,8 @@ def index_pdf_directory(directory_path, index_name):
         if filename.endswith(".pdf"):
             pdf_path = os.path.join(directory_path, filename)
             index_pdf(pdf_path, index_name)
+
+directory_path = '/Users/naren/Documents/Uni/FYP/Index_Data'  # The path where your PDFs are stored
+index_name = 'fyp-context'  # The name of your Pinecone index
+
+index_pdf_directory(directory_path, index_name)
