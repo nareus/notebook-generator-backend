@@ -65,7 +65,7 @@ def index_pdf(pdf_path, index_name):
 )
     index = pc.Index(index_name)
     
-    # Embed and index each chunk
+# Embed and index each chunk
     for i, chunk in enumerate(chunks):
         embedding = embed_text(chunk)
         index.upsert([(str(uuid.uuid4()), embedding, {"text": chunk, "source": pdf_path, "chunk_id": i})])
