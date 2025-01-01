@@ -54,11 +54,25 @@ class StructureRequest(BaseModel):
 
 class StructureResponse(BaseModel):
     structure: NotebookStructure
-
     # Ensure arbitrary types are allowed
     model_config = {
         "arbitrary_types_allowed": True
     }
+
+class TopicFeedbackRequest(BaseModel):
+    topics: str
+    feedback: str
+
+class StructureFeedbackRequest(BaseModel):
+    structure: str
+    feedback: str
+
+class TopicRequest(BaseModel):
+    topic: str
+    notebook_count: int
+
+class TopicResponse(BaseModel):
+    topics: List[str]
 
 app.add_middleware(
     CORSMiddleware,
@@ -224,7 +238,133 @@ async def generate_notebook_structure(request: StructureRequest):
             ]
         }
         return StructureResponse(structure=default_structure)
+    
+@app.post("/generate_feedback_structure", response_model=StructureResponse)
+async def generate_feedback_notebook_structure(request: StructureFeedbackRequest):
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini-2024-07-18",
+        messages=[
+            {
+                "role": "system", 
+                "content": """
+                You are an expert in refining notebook structures based on feedback.
+                Review the provided notebook structure and feedback, then generate 
+                an improved JSON structure incorporating the suggested changes.
+                Maintain the same format with:
+                - notebook_name
+                - sections (with name and pages)
+                - pages (with title, type, placeholders, content)
+                
+                Page types must be: 'text', 'code', 'markdown', or 'chart'
+                """
+            },
+            {
+                "role": "user", 
+                "content": f"Initial Structure:\n{request.structure}\n\nFeedback:\n{request.feedback}"
+            }
+        ],
+        response_format={ "type": "json_object" }
+    )
+
+    structure = json.loads(response.choices[0].message.content)
+    
+    validated_structure = {
+        "notebook_name": structure.get("notebook_name", "Revised Notebook"),
+        "sections": []
+    }
+
+    for section in structure.get("sections", []):
+        validated_section = {
+            "name": section.get("name", "Unnamed Section"),
+            "pages": []
+        }
+
+        for page in section.get("pages", []):
+            validated_page = {
+                "title": page.get("title", "Untitled Page"),
+                "type": page.get("type", "text"),
+                "placeholders": page.get("placeholders", []),
+                "content": page.get("content", "")
+            }
+
+            if validated_page["type"] not in ['text', 'code', 'markdown', 'chart']:
+                validated_page["type"] = "text"
+
+            validated_section["pages"].append(validated_page)
+
+        validated_structure["sections"].append(validated_section)
+
+    return StructureResponse(structure=validated_structure)
+    
+@app.post("/generate_topics", response_model=TopicResponse)
+async def generate_notebook_topics(request: TopicRequest):
+    # Retrieve context from Pinecone
+    print(request)
+    context = retrieve_context(request.topic)
+
+    # Prepare prompt for generating notebook structure
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini-2024-07-18",
+        messages=[
+            {
+                "role": "system", 
+                "content": """
+                You are an expert in creating topics of jupyter notebooks for educational purposes.
+                Generate a JSON response containing a list of subtopics with the exact number of notebooks specified derived from the main topic.
+                The response should break down the information into well-structured learning segments.
+
+                Expected JSON format if notebook count is 3:
+                {
+                    "topics": ["topic1", "topic2", "topic3"]
+                }
+                """
+
+            },
+            {
+                "role": "user", 
+                "content": f"Topic: {request.topic}\n\nNotebook Count: {request.notebook_count}\n\nContext:\n{context}"
+            }
+        ],
+        response_format={ "type": "json_object" }
+    )
+    
+    # Parse the JSON response
+    structure = json.loads(response.choices[0].message.content)
+    return TopicResponse(topics=structure["topics"])
+
+@app.post("/generate_feedback_topics", response_model=TopicResponse)
+async def generate_feedback_notebook_topics(request: TopicFeedbackRequest):
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini-2024-07-18",
+        messages=[
+            {
+                "role": "system", 
+                "content": """
+                You are an expert in refining notebook topics based on feedback.
+                Review the provided notebook topics and feedback, then generate 
+                an improved JSON structure incorporating new notbook names based on the feedback.
+                Expected JSON format:
+                {
+                    "topics": ["topic1", "topic2", "topic3..."]
+                }
+                """
+            },
+            {
+                "role": "user", 
+                "content": f"Initial Topics:\n{request.topics}\n\nFeedback:\n{request.feedback}"
+            }
+        ],
+        response_format={ "type": "json_object" }
+    )
+
+    # Parse the JSON response
+    structure = json.loads(response.choices[0].message.content)
+    return TopicResponse(topics=structure["topics"])
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
     
