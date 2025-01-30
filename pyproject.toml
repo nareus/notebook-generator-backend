@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Naren <narensreekanth@gmail.com>"]
 readme = "README.md"
+packages = [{include = "*", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -17,12 +18,10 @@ numpy = "^2.1.2"
 torch = "^2.5.0"
 openai = "^1.52.0"
 pinecone = "^5.3.1"
+nbformat = "^5.10.4"
 
-[
-tool.poetry.scripts
-]
+[tool.poetry.scripts]
 start = "start:main"
-
 
 [build-system]
 requires = ["poetry-core"]

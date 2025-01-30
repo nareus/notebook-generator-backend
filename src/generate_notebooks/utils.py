@@ -2,6 +2,8 @@ from openai import OpenAI
 from pinecone import Pinecone
 from config import Config
 from sentence_transformers import SentenceTransformer
+from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
+from generate_notebooks.models import Cell
 
 # Pinecone Initialization
 pc = Pinecone(api_key=Config.PINECONE_API_KEY)
@@ -41,3 +43,19 @@ def generate_with_context(prompt: str, context: str):
         response_format={ "type": "text" }
     )
     return response.choices[0].message.content
+
+def create_notebook(cells: list[dict]):
+    nb = new_notebook()
+    
+    for cell in cells:
+        if cell['cell_type'] == 'markdown':
+            cell = new_markdown_cell(cell['content'])
+        elif cell['cell_type'] == 'code':
+            cell = new_code_cell(cell['content'])
+        else:
+            raise ValueError(f"Invalid cell type: {cell['cell_type']}")
+        
+        nb.cells.append(cell)
+    
+    return nb
+    return nb

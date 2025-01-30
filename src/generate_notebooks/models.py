@@ -1,11 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-class NotebookRequest(BaseModel):
-    topic: str
-
-class NotebookResponse(BaseModel):
-    cells: List[str]
 class NotebookPage(BaseModel):
     title: str
     type: str = Field(
@@ -37,10 +32,6 @@ class StructureRequest(BaseModel):
 
 class StructureResponse(BaseModel):
     structure: NotebookStructure
-    # Ensure arbitrary types are allowed
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
 
 class TopicFeedbackRequest(BaseModel):
     topics: str
@@ -56,3 +47,13 @@ class TopicRequest(BaseModel):
 
 class TopicResponse(BaseModel):
     topics: List[str]
+
+class NotebookRequest(BaseModel):
+    structure: NotebookStructure
+
+class NotebookResponse(BaseModel):
+    cells: List[str]
+
+class Cell(BaseModel):
+    cell_type: str
+    content: str
