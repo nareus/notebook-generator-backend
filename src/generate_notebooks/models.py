@@ -15,17 +15,13 @@ class NotebookSection(BaseModel):
     name: str
     pages: List[NotebookPage]
 
+class Cell(BaseModel):
+    type: str
+    content: str
+
 class NotebookStructure(BaseModel):
     notebook_name: str
-    sections: List[NotebookSection]
-
-    # Optional: Custom validation
-    @classmethod
-    def validate_page_type(cls, v):
-        allowed_types = ['text', 'code', 'markdown', 'chart']
-        if v not in allowed_types:
-            raise ValueError(f"Page type must be one of {allowed_types}")
-        return v
+    cells: List[Cell]
 
 class StructureRequest(BaseModel):
     topic: str
@@ -53,7 +49,3 @@ class NotebookRequest(BaseModel):
 
 class NotebookResponse(BaseModel):
     cells: List[str]
-
-class Cell(BaseModel):
-    cell_type: str
-    content: str

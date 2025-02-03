@@ -12,86 +12,43 @@ router = APIRouter()
 @router.post("/generate_notebook", response_model=NotebookResponse)
 async def generate_notebook(request: NotebookRequest):
     # Retrieve context from Pinecone
-    # context = retrieve_context(request.structure.notebook_name)
+    context = retrieve_context(request.structure.notebook_name)
     
-    # structure : NotebookStructure = request.structure
-    # print(structure)
+    structure : NotebookStructure = request.structure
+    print(structure)
 
-    # client = OpenAI()
-    # response = client.chat.completions.create(
-    #     model="gpt-4",
-    #     messages=[
-    #         {
-    #             "role": "system",
-    #             "content": """
-    #             You are an expert in creating educational Jupyter notebooks.
-    #             Generate comprehensive notebook content based on the given topic, structure and context.
-    #             For each section and page in the structure:
-    #             1. Create detailed educational content following the specified type (text/code/markdown/chart)
-    #             2. Include practical examples and explanations
-    #             3. Ensure content flows logically between sections
-    #             4. Use '---' as a cell separator
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {
+                "role": "system",
+                "content": """
+                You are an expert in creating educational Jupyter notebooks for university level students.
+                Generate comprehensive notebook content based on the given topic, structure and context.
+                For each section and page in the structure:
+                1. Create detailed educational content following the specified type (text/code/markdown/chart)
+                2. Include practical examples and explanations
+                3. Ensure content flows logically between sections
+                4. Use '---' as a cell separator
                 
-    #             Format the response with clear cell separations and appropriate content types.
-    #             """
-    #         },
-    #         {
-    #             "role": "user",
-    #             "content": f"Topic: {structure.notebook_name}\n\nStructure:\n{str(structure.sections)}\n\nContext:\n{context}"
-    #         }
-    #     ]
-    # )
+                Format the response with clear cell separations and appropriate content types.
+                """
+            },
+            {
+                "role": "user",
+                "content": f"Topic: {structure.notebook_name}\n\nStructure:\n{str(structure.sections)}\n\nContext:\n{context}"
+            }
+        ]
+    )
 
-    # notebook_content = response.choices[0].message.content
-    notebook_content  = """Introduction to Python Programming
-    ---
-    # Getting Started with Python
-    Python is a versatile programming language known for its readability and extensive library ecosystem.
-
-    Key concepts we'll cover:
-    - Variables and Data Types
-    - Control Flow
-    - Functions
-    - Basic I/O
-    ---
-    # First Python Program
-    Let's write our first Python program:
-    ```python
-    print("Hello, World!")
-    name = "Python Learner"
-    print(f"Welcome, {name}!")
-
-    ---
-    # Variables and Data Types
-    Python has several built-in data types:
-
-    Strings
-    Numbers (int, float)
-    Lists
-    Dictionaries
-
-    ---
-    # Example of different data types
-    text = "Python"
-    number = 42
-    decimal = 3.14
-    my_list = [1, 2, 3]
-    my_dict = {"name": "Python", "type": "Programming Language"}
-
-    print(f"String: {text}")
-    print(f"Integer: {number}")
-    print(f"Float: {decimal}")
-    print(f"List: {my_list}")
-    print(f"Dictionary: {my_dict}")
-    ---"""
+    notebook_content = response.choices[0].message.content
 
     # Split content into cells based on "---" or other delimiter
     notebook_cells = []
     cells = [cell.strip() for cell in notebook_content.split("---") if cell.strip()]
     for cell in cells:
-        # Detect cell type based on content patterns
         if "```python" in cell or "```" in cell:
-            # Code cell - strip out the python markers
             cell_type = "code"
             cell_content = cell.replace("```python", "").replace("```", "").strip()
         elif cell.startswith("#"):
@@ -122,8 +79,6 @@ async def generate_notebook(request: NotebookRequest):
             "Content-Disposition": "attachment; filename=generated_notebook.ipynb"
         }
     )
-    
-    # return NotebookResponse(notebook=notebook)
 
 @router.post("/generate_structure", response_model=StructureResponse)
 async def generate_notebook_structure(request: StructureRequest):
@@ -133,41 +88,34 @@ async def generate_notebook_structure(request: StructureRequest):
     # Prepare prompt for generating notebook structure
     client = OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {
                 "role": "system", 
                 "content": """
                 You are an expert in creating structured notebook outlines for educational purposes. 
+                The Structure should include multiple cells with a prompt to generate the content using LLM.
                 Generate a comprehensive JSON structure for a Jupyter notebook 
                 based on the given topic and context. Follow these guidelines:
 
-                1. Choose a descriptive notebook name related to the topic
-                2. Create multiple sections that comprehensively cover the topic
-                3. For each section, include multiple pages with specific attributes:
-                   - title: Clear, descriptive page title
-                   - type: One of 'text', 'code', 'markdown', or 'chart'
-                   - placeholders: Optional suggestions for content development
-                   - content: Optional initial content (can be left empty)
+                1. Use the Topic given as the notebook name
+                2. Create multiple cells that comprehensively cover the topic with specific attributes:
+                   - type: One of 'code', 'markdown', 'chart', or 'image'
+                   - content: The prompt to generate the content using LLM
+
+                IMPORTANT: Your response must be a valid JSON string. Do not include any additional text or explanations outside the JSON structure.
 
                 Example Structure:
                 {
                     "notebook_name": "Advanced Python Programming",
-                    "sections": [
+                    "cells": [
                         {
-                            "name": "Introduction to Advanced Concepts",
-                            "pages": [
-                                {
-                                    "title": "Course Overview",
-                                    "type": "text",
-                                    "placeholders": ["Learning Objectives", "Prerequisites"]
-                                },
-                                {
-                                    "title": "Python Ecosystem",
-                                    "type": "markdown",
-                                    "placeholders": ["Key Libraries", "Development Environment"]
-                                }
-                            ]
+                            "type": "text",
+                            "content": "Generate a detailed explanation of Python's decorators."
+                        },
+                        {
+                            "type": "markdown",
+                            "content": "Create a markdown cell with a table summarizing the key features of Python."
                         }
                     ]
                 }
@@ -178,6 +126,7 @@ async def generate_notebook_structure(request: StructureRequest):
                 "content": f"Topic: {request.topic}\n\nContext:\n{context}"
             }
         ],
+        response_format={ "type": "json_object" }  # Explicitly request JSON response
     )
 
     # Parse the JSON response
@@ -187,47 +136,30 @@ async def generate_notebook_structure(request: StructureRequest):
         # Validate structure matches expected interface
         validated_structure = {
             "notebook_name": structure.get("notebook_name", f"{request.topic} Notebook"),
-            "sections": []
+            "cells": []
         }
 
-        for section in structure.get("sections", []):
-            validated_section = {
-                "name": section.get("name", "Unnamed Section"),
-                "pages": []
+        for cell in structure.get("cells", []):
+            validated_cell = {
+                "type": cell.get("type", "text"),
+                "content": cell.get("content", "")
             }
 
-            for page in section.get("pages", []):
-                validated_page = {
-                    "title": page.get("title", "Untitled Page"),
-                    "type": page.get("type", "text"),
-                    "placeholders": page.get("placeholders", []),
-                    "content": page.get("content", "")
-                }
+            # Ensure type is one of the allowed values
+            if validated_cell["type"] not in ['code', 'markdown', 'chart', 'image']:
+                validated_cell["type"] = "markdown"
 
-                # Ensure type is one of the allowed values
-                if validated_page["type"] not in ['text', 'code', 'markdown', 'chart']:
-                    validated_page["type"] = "text"
-
-                validated_section["pages"].append(validated_page)
-
-            validated_structure["sections"].append(validated_section)
+            validated_structure["cells"].append(validated_cell)
 
         return StructureResponse(structure=validated_structure)
     except json.JSONDecodeError:
         # Fallback to a default structure if JSON parsing fails
         default_structure = {
             "notebook_name": f"{request.topic} Notebook",
-            "sections": [
+            "cells": [
                 {
-                    "name": "Introduction",
-                    "pages": [
-                        {
-                            "title": "Overview",
-                            "type": "text",
-                            "placeholders": ["Key Concepts", "Scope"],
-                            "content": ""
-                        }
-                    ]
+                    "type": "markdown",
+                    "content": "Generate an introduction to the topic."
                 }
             ]
         }
