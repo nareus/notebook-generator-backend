@@ -49,3 +49,10 @@ class NotebookRequest(BaseModel):
 
 class NotebookResponse(BaseModel):
     cells: List[str]
+
+class CellRequest(BaseModel):
+    topic: str
+    prompt: str
+
+class CellResponse(BaseModel):
+    content: str

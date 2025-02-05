@@ -2,7 +2,7 @@ import json
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from generate_notebooks.models import NotebookRequest, NotebookResponse, StructureFeedbackRequest, StructureRequest, StructureResponse, TopicFeedbackRequest, TopicRequest, TopicResponse, NotebookStructure
+from generate_notebooks.models import NotebookRequest, NotebookResponse, StructureFeedbackRequest, StructureRequest, StructureResponse, TopicFeedbackRequest, TopicRequest, TopicResponse, NotebookStructure, CellRequest, CellResponse
 from generate_notebooks.utils import generate_with_context, retrieve_context, create_notebook
 from openai import OpenAI
 import nbformat
@@ -80,12 +80,38 @@ async def generate_notebook(request: NotebookRequest):
         }
     )
 
+@router.post("/generate_cell_content", response_model=CellResponse)
+async def generate_cell(request: CellRequest):
+    # Retrieve context from Pinecone
+    context = retrieve_context(request.topic)
+
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": """
+                You are an expert in creating educational Jupyter notebooks for university level students.
+                Generate a content of the cell based on the given topic, prompt and context. Make sure it is elaborate, clear and concise. 
+                Only add the content of the cell, no other text.
+                """
+            },
+            {
+                "role": "user",
+                "content": f"Topic: {request.topic}\n\nPrompt: {request.prompt}\n\nContext:\n{context}"
+            }
+        ]
+    )
+    cell_content = response.choices[0].message.content
+    return CellResponse(content=cell_content)
+
+
 @router.post("/generate_structure", response_model=StructureResponse)
 async def generate_notebook_structure(request: StructureRequest):
     # Retrieve context from Pinecone
     context = retrieve_context(request.topic)
 
-    # Prepare prompt for generating notebook structure
     client = OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -126,10 +152,9 @@ async def generate_notebook_structure(request: StructureRequest):
                 "content": f"Topic: {request.topic}\n\nContext:\n{context}"
             }
         ],
-        response_format={ "type": "json_object" }  # Explicitly request JSON response
+        response_format={ "type": "json_object" }
     )
 
-    # Parse the JSON response
     try:
         structure = json.loads(response.choices[0].message.content)
         
