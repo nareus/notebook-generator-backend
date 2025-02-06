@@ -19,6 +19,8 @@ torch = "^2.5.0"
 openai = "^1.52.0"
 pinecone = "^5.3.1"
 nbformat = "^5.10.4"
+pymongo = {extras = ["srv"], version = "^4.11"}
+python-multipart = "^0.0.20"
 
 [tool.poetry.scripts]
 start = "start:main"

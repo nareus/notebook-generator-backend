@@ -7,7 +7,7 @@ load_dotenv()
 class Config:
     PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    # Add any other configuration variables here
+    MONGODB_URI = os.getenv("MONGODB_URI")
 
     @classmethod
     def validate(cls):
@@ -15,5 +15,4 @@ class Config:
             if not key.startswith("__") and value is None:
                 raise ValueError(f"Environment variable {key} is not set. Please check your .env file.")
 
-# Validate the configuration when this module is imported
 Config.validate()

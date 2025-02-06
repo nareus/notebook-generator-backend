@@ -25,37 +25,17 @@ def embed_topic(topic: str):
     # Use OpenAI or any embedding model to generate an embedding vector for the topic
     return model.encode(topic).tolist()
 
-def generate_with_context(prompt: str, context: str):
-    # Combine context and prompt to generate a response
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {
-                "role": "system", 
-                "content": "You need to generate jupyter notebook cells for university students based on the given topic and context. Make it elaborate and keep a 3 to 1 ratio of explanation and code. Seperate the cells using '---'"
-            },
-            {
-                "role": "user", 
-                "content": f"Context:\n{context}\n\n{prompt}"
-            }
-        ],
-        response_format={ "type": "text" }
-    )
-    return response.choices[0].message.content
-
-def create_notebook(cells: list[dict]):
+def create_notebook(cells: list[Cell]):
     nb = new_notebook()
     
     for cell in cells:
-        if cell['cell_type'] == 'markdown':
-            cell = new_markdown_cell(cell['content'])
-        elif cell['cell_type'] == 'code':
-            cell = new_code_cell(cell['content'])
+        if cell.type == 'markdown':
+            new_cell = new_markdown_cell(cell.content)
+        elif cell.type == 'code':
+            new_cell = new_code_cell(cell.content)
         else:
-            raise ValueError(f"Invalid cell type: {cell['cell_type']}")
+            raise ValueError(f"Invalid cell type: {cell.type}")
         
-        nb.cells.append(cell)
+        nb.cells.append(new_cell)
     
-    return nb
     return nb

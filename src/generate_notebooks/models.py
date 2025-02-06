@@ -6,7 +6,7 @@ class NotebookPage(BaseModel):
     type: str = Field(
         ..., 
         description="Type of notebook page",
-        pattern="^(text|code|markdown|chart)$"
+        pattern="^(code|markdown)$"
     )
     placeholders: Optional[List[str]] = None
     content: Optional[str] = None

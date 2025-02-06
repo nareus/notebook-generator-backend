@@ -1,76 +1,24 @@
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from generate_notebooks.models import NotebookRequest, NotebookResponse, StructureFeedbackRequest, StructureRequest, StructureResponse, TopicFeedbackRequest, TopicRequest, TopicResponse, NotebookStructure, CellRequest, CellResponse
-from generate_notebooks.utils import generate_with_context, retrieve_context, create_notebook
+from generate_notebooks.models import (
+    NotebookRequest, NotebookResponse, StructureFeedbackRequest,
+    StructureRequest, StructureResponse, TopicFeedbackRequest,
+    TopicRequest, TopicResponse, CellRequest,
+    CellResponse
+)
+from generate_notebooks.utils import retrieve_context, create_notebook
 from openai import OpenAI
 import nbformat
+
 
 router = APIRouter()
 
 @router.post("/generate_notebook", response_model=NotebookResponse)
 async def generate_notebook(request: NotebookRequest):
-    # Retrieve context from Pinecone
-    context = retrieve_context(request.structure.notebook_name)
-    
-    structure : NotebookStructure = request.structure
-    print(structure)
 
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {
-                "role": "system",
-                "content": """
-                You are an expert in creating educational Jupyter notebooks for university level students.
-                Generate comprehensive notebook content based on the given topic, structure and context.
-                For each section and page in the structure:
-                1. Create detailed educational content following the specified type (text/code/markdown/chart)
-                2. Include practical examples and explanations
-                3. Ensure content flows logically between sections
-                4. Use '---' as a cell separator
-                
-                Format the response with clear cell separations and appropriate content types.
-                """
-            },
-            {
-                "role": "user",
-                "content": f"Topic: {structure.notebook_name}\n\nStructure:\n{str(structure.sections)}\n\nContext:\n{context}"
-            }
-        ]
-    )
-
-    notebook_content = response.choices[0].message.content
-
-    # Split content into cells based on "---" or other delimiter
-    notebook_cells = []
-    cells = [cell.strip() for cell in notebook_content.split("---") if cell.strip()]
-    for cell in cells:
-        if "```python" in cell or "```" in cell:
-            cell_type = "code"
-            cell_content = cell.replace("```python", "").replace("```", "").strip()
-        elif cell.startswith("#"):
-            # Markdown header
-            cell_type = "markdown" 
-            cell_content = cell
-        elif any(marker in cell for marker in ["*", "-", "1.", "|"]):
-            # Markdown with lists, bullet points or tables
-            cell_type = "markdown"
-            cell_content = cell
-        else:
-            # Default to markdown for text content
-            cell_type = "markdown"
-            cell_content = cell
-
-        notebook_cells.append({
-            "cell_type": cell_type,
-            "content": cell_content.split("\n")
-        })
-    print(notebook_cells)
-
-    notebook = create_notebook(notebook_cells)
+    notebook = create_notebook(request.structure.cells)
     notebook_content = nbformat.writes(notebook)
     
     return JSONResponse(
@@ -194,7 +142,7 @@ async def generate_notebook_structure(request: StructureRequest):
 async def generate_feedback_notebook_structure(request: StructureFeedbackRequest):
     client = OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {
                 "role": "system", 
@@ -285,7 +233,7 @@ async def generate_notebook_topics(request: TopicRequest):  # Specify the reques
 async def generate_feedback_notebook_topics(request: TopicFeedbackRequest):
     client = OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {
                 "role": "system", 
