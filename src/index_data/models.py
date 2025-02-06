@@ -6,3 +6,6 @@ class DocumentsResponse(BaseModel):
 
 class IndexPDFResponse(BaseModel):
     message: str
+
+class DeletePDFRequest(BaseModel):
+    filename: str

@@ -74,7 +74,7 @@ async def generate_notebook_structure(request: StructureRequest):
 
                 1. Use the Topic given as the notebook name
                 2. Create multiple cells that comprehensively cover the topic with specific attributes:
-                   - type: One of 'code', 'markdown', 'chart', or 'image'
+                   - type: One of 'code', 'markdown', or 'chart'
                    - content: The prompt to generate the content using LLM
 
                 IMPORTANT: Your response must be a valid JSON string. Do not include any additional text or explanations outside the JSON structure.

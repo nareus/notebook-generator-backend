@@ -29,9 +29,9 @@ def create_notebook(cells: list[Cell]):
     nb = new_notebook()
     
     for cell in cells:
-        if cell.type == 'markdown':
+        if cell.type == 'markdown or image':
             new_cell = new_markdown_cell(cell.content)
-        elif cell.type == 'code':
+        elif cell.type == 'code' or cell.type == 'chart':
             new_cell = new_code_cell(cell.content)
         else:
             raise ValueError(f"Invalid cell type: {cell.type}")
