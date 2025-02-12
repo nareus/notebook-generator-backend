@@ -2,7 +2,7 @@ from pymongo.mongo_client import MongoClient
 from config import Config
 from pymongo.server_api import ServerApi
 from fastapi import APIRouter, Query
-from .models import DocumentsResponse, IndexPDFResponse, DeletePDFRequest
+from .models import DocumentsResponse, IndexPDFResponse, DeletePDFRequest, SelectPDFsRequest
 from .utils import extract_text_from_pdf, chunk_text, embed_text, get_list_of_pdfs
 from fastapi import UploadFile, File, HTTPException
 from pinecone import Pinecone, ServerlessSpec
@@ -38,7 +38,6 @@ async def index_pdf(file: UploadFile = File(...)):
     chunks = chunk_text(file_content)
     
     # Create or connect to the index
-    print('fyp-context' not in pc.list_indexes())
     if 'fyp-context' not in [index['name'] for index in pc.list_indexes()]:
         pc.create_index(
             name='fyp-context',
@@ -59,7 +58,7 @@ async def index_pdf(file: UploadFile = File(...)):
     # Store the file name in MongoDB
     client = MongoClient(Config.MONGODB_URI, server_api=ServerApi('1'))
     documents = client['fyp']['documents']
-    documents.insert_one({'name': file.filename})
+    documents.insert_one({'name': file.filename}, {'selected': False})
     
     return IndexPDFResponse(message=f"Indexed {len(chunks)} chunks from {file.filename}")
 
@@ -87,3 +86,15 @@ async def delete_pdf(request: DeletePDFRequest):
     
     return {"message": f"Deleted {request.filename}", "deleted_count": result.deleted_count}
 
+@router.post('/select_pdfs')
+async def select_pdfs(request: SelectPDFsRequest):
+    client = MongoClient(Config.MONGODB_URI, server_api=ServerApi('1'))
+    documents = client['fyp']['documents']
+    documents.update_many(
+        {'name': {'$nin': request.filenames}},
+        {'$set': {'selected': False}}
+    )
+    documents.update_many(
+    {'name': {'$in': request.filenames}}, 
+    {'$set': {'selected': True}}
+)

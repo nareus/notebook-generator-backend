@@ -47,19 +47,6 @@ def embed_text(text):
     """
     return model.encode(text).tolist()
 
-# def index_pdf_directory(directory_path, index_name):
-#     """
-#     Index all PDF files in a directory into Pinecone.
-#     """
-#     existing_pdfs = get_list_of_pdfs()
-#     for filename in os.listdir(directory_path):
-#         if filename.endswith(".pdf"):
-#             pdf_path = os.path.join(directory_path, filename)
-#             if pdf_path not in existing_pdfs:
-#                 print(f"Indexing {pdf_path}")
-#                 documents.insert_one({'name': filename})
-#                 index_pdf(pdf_path, index_name)
-
 def get_list_of_pdfs():
     client = MongoClient(Config.MONGODB_URI, server_api=ServerApi('1'))
     documents = client['fyp']['documents']

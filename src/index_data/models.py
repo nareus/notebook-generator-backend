@@ -9,3 +9,6 @@ class IndexPDFResponse(BaseModel):
 
 class DeletePDFRequest(BaseModel):
     filename: str
+
+class SelectPDFsRequest(BaseModel):
+    filenames: List[str]

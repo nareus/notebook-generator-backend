@@ -42,7 +42,7 @@ async def generate_cell(request: CellRequest):
                 "content": """
                 You are an expert in creating educational Jupyter notebooks for university level students.
                 Generate a content of the cell based on the given topic, prompt and context. Make sure it is elaborate, clear and concise. 
-                Only add the content of the cell, no other text.
+                Only add the content of the cell, no other text. If it seems like a code or chart cell, return just the code.
                 """
             },
             {
