@@ -54,7 +54,6 @@ async def index_pdf(file: UploadFile = File(...)):
         embedding = embed_text(chunk)
         index.upsert([(str(uuid.uuid4()), embedding, {"text": chunk, "filename": file.filename, "chunk_id": i})])
     
-    print(f"Indexed {len(chunks)} chunks from {file.filename}")
     # Store the file name in MongoDB
     client = MongoClient(Config.MONGODB_URI, server_api=ServerApi('1'))
     documents = client['fyp']['documents']
@@ -97,4 +96,7 @@ async def select_pdfs(request: SelectPDFsRequest):
     documents.update_many(
     {'name': {'$in': request.filenames}}, 
     {'$set': {'selected': True}}
-)
+    )
+    return {"message": f"Selected {len(request.filenames)} PDFs"}
+    
+
